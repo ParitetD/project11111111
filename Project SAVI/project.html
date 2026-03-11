@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAVI — Поиск людей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF8C00;
+    --orange-deep: #E07800;
+    --orange-glow: rgba(255, 140, 0, 0.18);
+    --orange-light: #FFF4E0;
+    --white: #FFFFFF;
+    --bg: #F7F7F8;
+    --card-bg: #FFFFFF;
+    --text-primary: #1A1A1A;
+    --text-secondary: #6B6B7B;
+    --text-muted: #A0A0B0;
+    --border: #EBEBF0;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.10);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.16);
+    --radius: 16px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Manrope', sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+  header { position: sticky; top: 0; z-index: 100; background: var(--white); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+  .header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; gap: 32px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .logo-icon { width: 36px; height: 36px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 20px; height: 20px; fill: white; }
+  .logo-text { font-family: 'Unbounded', sans-serif; font-size: 20px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; }
+  .search-wrap { flex: 1; position: relative; max-width: 560px; }
+  .search-wrap input { width: 100%; height: 42px; border: 1.5px solid var(--border); border-radius: 100px; padding: 0 48px 0 20px; font-family: 'Manrope', sans-serif; font-size: 14px; color: var(--text-primary); background: var(--bg); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .search-wrap input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); background: var(--white); }
+  .search-wrap input::placeholder { color: var(--text-muted); }
+  .search-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--orange); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.15s; }
+  .search-btn:hover { background: var(--orange-deep); transform: translateY(-50%) scale(1.07); }
+  .search-btn svg { width: 15px; height: 15px; stroke: white; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-stats { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+  .header-stats span { font-weight: 700; color: var(--orange); }
+  .hero { background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%); padding: 36px 24px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at 50% 120%, var(--orange-glow) 0%, transparent 70%); }
+  .hero-content { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+  .hero h1 { font-family: 'Unbounded', sans-serif; font-size: clamp(20px, 4vw, 32px); font-weight: 800; color: white; line-height: 1.2; margin-bottom: 10px; }
+  .hero h1 em { color: var(--orange); font-style: normal; }
+  .hero p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+  main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 60px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+  .section-title { font-family: 'Unbounded', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+  .section-title .dot { width: 8px; height: 8px; background: var(--orange); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.7); } }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn { padding: 7px 16px; border-radius: 100px; border: 1.5px solid var(--border); background: white; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
+  .card { background: var(--card-bg); border-radius: var(--radius); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); border: 1px solid var(--border); transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease; }
+  .card:hover { transform: translateY(-6px) scale(1.01); box-shadow: var(--shadow-md); border-color: rgba(255,140,0,0.25); }
+  .card:hover .card-photo-overlay { opacity: 1; }
+  .card-photo { width: 100%; height: 250px; background: linear-gradient(145deg, #E8E8EE 0%, #D8D8E0 100%); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
+  .card-photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(255,140,0,0.15) 0%, transparent 50%); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1; }
+  .card-photo svg { width: 52px; height: 52px; opacity: 0.25; }
+  .card-photo-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  .card:nth-child(1) .card-photo { background: linear-gradient(145deg, #DDE8F5 0%, #C5D8EF 100%); }
+  .card:nth-child(2) .card-photo { background: linear-gradient(145deg, #F5DDE8 0%, #EFC5D8 100%); }
+  .card:nth-child(3) .card-photo { background: linear-gradient(145deg, #DDF5E0 0%, #C5EFC9 100%); }
+  .card:nth-child(4) .card-photo { background: linear-gradient(145deg, #F5EDDD 0%, #EFE0C5 100%); }
+  .card:nth-child(5) .card-photo { background: linear-gradient(145deg, #EDD5F5 0%, #E0C5EF 100%); }
+  .card:nth-child(6) .card-photo { background: linear-gradient(145deg, #D5EFF5 0%, #C5E8EF 100%); }
+  .card:nth-child(7) .card-photo { background: linear-gradient(145deg, #F5E0D5 0%, #EFD5C5 100%); }
+  .card:nth-child(8) .card-photo { background: linear-gradient(145deg, #E0F5D5 0%, #D5EFC5 100%); }
+  .card-body { padding: 16px; }
+  .card-status { display: inline-flex; align-items: center; gap: 5px; background: var(--orange-light); color: var(--orange); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .card-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+  .card-name { font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; line-height: 1.25; letter-spacing: -0.3px; }
+  .card-meta { display: flex; flex-direction: column; gap: 5px; }
+  .card-meta-row { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-secondary); }
+  .card-meta-row svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.55; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,15,20,0.65); backdrop-filter: blur(6px); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--white); border-radius: 24px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); transform: translateY(24px) scale(0.97); transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); position: relative; }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+  .modal-header { display: flex; gap: 20px; padding: 28px 28px 20px; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .modal-photo { width: 100px; height: 120px; border-radius: 12px; background: linear-gradient(145deg, #E8E8EE 0%, #D8D8E0 100%); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .modal-photo svg { width: 36px; height: 36px; opacity: 0.25; }
+  .modal-info { flex: 1; min-width: 0; }
+  .modal-status { display: inline-flex; align-items: center; gap: 5px; background: var(--orange-light); color: var(--orange); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 10px; }
+  .modal-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); animation: pulse 2s infinite; }
+  .modal-name { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-bottom: 12px; letter-spacing: -0.5px; }
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); background: var(--bg); padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border); }
+  .tag svg { width: 12px; height: 12px; opacity: 0.6; }
+  .modal-close { position: absolute; top: 20px; right: 20px; width: 34px; height: 34px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+  .modal-close:hover { background: var(--border); }
+  .modal-close svg { width: 16px; height: 16px; stroke: var(--text-secondary); stroke-width: 2; fill: none; }
+  .modal-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+  .modal-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+  .modal-section-text { font-size: 14px; line-height: 1.65; color: var(--text-secondary); }
+  .features-list { display: flex; flex-direction: column; gap: 6px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+  .feature-item::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); margin-top: 7px; flex-shrink: 0; }
+  .modal-footer { padding: 0 28px 28px; }
+  .btn-contact { width: 100%; height: 52px; background: var(--orange); border: none; border-radius: 14px; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; color: white; cursor: pointer; transition: background 0.2s, transform 0.15s; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: 0.2px; }
+  .btn-contact:hover { background: var(--orange-deep); transform: scale(1.01); }
+  .btn-contact svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+  .form-input { padding: 10px 14px; border: 1.5px solid #EBEBF0; border-radius: 10px; font-family: Manrope, sans-serif; font-size: 14px; outline: none; width: 100%; transition: border-color 0.2s; background: white; }
+  .form-input:focus { border-color: var(--orange); }
+  @media (max-width: 600px) {
+    .header-inner { gap: 14px; padding: 0 16px; }
+    .header-stats { display: none; }
+    main { padding: 20px 16px 48px; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card-photo { height: 180px; }
+    .card-body { padding: 12px; }
+    .card-name { font-size: 13px; }
+    .modal-header { flex-direction: column; padding: 22px 20px 16px; }
+    .modal-body { padding: 18px 20px; }
+    .modal-footer { padding: 0 20px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      </div>
+      <span class="logo-text">SAVI</span>
+    </a>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Поиск по имени, городу или дате...">
+      <button class="search-btn">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+    </div>
+    <div class="header-stats">В розыске: <span id="statsCount">0</span> человека</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1>Помогите найти<br><em>близкого человека</em></h1>
+    <p>Единая база пропавших людей. Каждое сообщение может изменить чью-то жизнь.</p>
+  </div>
+</div>
+
+<main>
+  <div class="section-header">
+    <div class="section-title"><div class="dot"></div>Актуальный розыск</div>
+    <button class="btn-contact" style="width:auto;height:40px;padding:0 20px;font-size:13px;" onclick="openAdd()">
+      + Добавить человека
+    </button>
+    <div class="filters">
+      <button class="filter-btn active">Все</button>
+      <button class="filter-btn">Дети</button>
+      <button class="filter-btn">Взрослые</button>
+      <button class="filter-btn">Пожилые</button>
+    </div>
+  </div>
+  <div class="grid" id="cardGrid"></div>
+</main>
+
+<!-- ФОРМА ДОБАВЛЕНИЯ -->
+<div class="modal-overlay" id="addOverlay" onclick="if(event.target===this)closeAdd()">
+  <div class="modal" style="max-width:520px;">
+    <button class="modal-close" onclick="closeAdd()">
+      <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div style="padding:28px;">
+      <div class="modal-name" style="font-size:18px;margin-bottom:20px;">Добавить человека</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <input id="f_name" class="form-input" placeholder="ФИО *">
+        <input id="f_age" class="form-input" type="number" placeholder="Возраст *">
+        <input id="f_city" class="form-input" placeholder="Город *">
+        <input id="f_date" class="form-input" type="date">
+        <textarea id="f_clothes" class="form-input" placeholder="Описание одежды *" rows="2" style="resize:none;"></textarea>
+        <textarea id="f_features" class="form-input" placeholder="Особые приметы *" rows="2" style="resize:none;"></textarea>
+        <input id="f_photo" class="form-input" placeholder="Ссылка на фото (необязательно)">
+        <label for="f_photo_file" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:2px dashed #EBEBF0;border-radius:10px;cursor:pointer;color:#6B6B7B;font-size:14px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#FF8C00'" onmouseout="this.style.borderColor='#EBEBF0'">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="f_photo_label">Выбрать фото с компьютера</span>
+        </label>
+        <input id="f_photo_file" type="file" accept="image/*" style="display:none;" onchange="document.getElementById('f_photo_label').textContent=this.files[0]?this.files[0].name:'Выбрать фото с компьютера'">
+        <input id="f_phone" class="form-input" placeholder="Телефон для связи *">
+        <div id="f_error" style="color:red;font-size:13px;display:none;"></div>
+        <button onclick="submitPerson()" class="btn-contact">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПРОСМОТРА -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">
+      <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-header" id="modalHeader"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-contact">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.12 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.14 6.14l1.06-.97a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Связаться с координатором
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var API = 'http://127.0.0.1:8000';
+  var people = [];
+
+  var personSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+  var pinSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var calSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+
+  function getPhoto(url) {
+    if (!url) return null;
+    if (url.indexOf('http') === 0) return url;
+    return API + url;
+  }
+
+  function loadFromAPI() {
+    fetch(API + '/persons')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        people = data;
+        document.getElementById('statsCount').textContent = people.length;
+        renderCards('');
+      })
+      .catch(function(e) { console.error('Ошибка загрузки:', e); });
+  }
+
+  function renderCards(filter) {
+    var grid = document.getElementById('cardGrid');
+    grid.innerHTML = '';
+    var filtered = filter ? people.filter(function(p) {
+      var q = filter.toLowerCase();
+      return p.full_name.toLowerCase().indexOf(q) !== -1 || p.city.toLowerCase().indexOf(q) !== -1;
+    }) : people;
+    filtered.forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      var photo = getPhoto(p.photo_url);
+      var photoHTML = photo
+        ? '<img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;">'
+        : personSVG + '<span class="card-photo-label">Фото</span>';
+      var foundBtn = p.status === 'Активен'
+        ? '<button onclick="markFound(event,' + people.indexOf(p) + ')" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;border:none;background:#E8F5E9;color:#2E7D32;cursor:pointer;">Найден</button>'
+        : '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;background:#E8F5E9;color:#2E7D32;">Найден</span>';
+      card.innerHTML =
+        '<div class="card-photo"><div class="card-photo-overlay"></div>' + photoHTML + '</div>' +
+        '<div class="card-body">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+            '<div class="card-status">' + p.status + '</div>' +
+            foundBtn +
+          '</div>' +
+          '<div class="card-name">' + p.full_name + '</div>' +
+          '<div class="card-meta">' +
+            '<div class="card-meta-row">' + pinSVG + ' ' + p.city + '</div>' +
+            '<div class="card-meta-row">' + calSVG + ' ' + p.missing_date + '</div>' +
+          '</div>' +
+        '</div>';
+      var index = people.indexOf(p);
+      card.addEventListener('click', function() { openModal(index); });
+      grid.appendChild(card);
+    });
+  }
+
+  function markFound(event, index) {
+    event.stopPropagation();
+    var p = people[index];
+    if (!confirm('Отметить ' + p.full_name + ' как найденного?')) return;
+    fetch(API + '/persons/' + p.id + '/found', { method: 'PATCH' })
+      .then(function() { loadFromAPI(); })
+      .catch(function() { alert('Ошибка соединения с сервером'); });
+  }
+
+  function openModal(i) {
+    var p = people[i];
+    var photo = getPhoto(p.photo_url);
+    var photoHTML = photo
+      ? '<img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;">'
+      : personSVG;
+
+    document.getElementById('modalHeader').innerHTML =
+      '<div class="modal-photo">' + photoHTML + '</div>' +
+      '<div class="modal-info">' +
+        '<div class="modal-status">В розыске</div>' +
+        '<div class="modal-name">' + p.full_name + '</div>' +
+        '<div class="modal-tags">' +
+          '<span class="tag">' + pinSVG + ' ' + p.city + '</span>' +
+          '<span class="tag">' + calSVG + ' ' + p.missing_date + '</span>' +
+          '<span class="tag">' + personSVG + ' ' + p.age + ' лет</span>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('modalBody').innerHTML =
+      '<div class="modal-section">' +
+        '<div class="modal-section-title">Описание одежды</div>' +
+        '<div class="modal-section-text">' + p.clothes + '</div>' +
+      '</div>' +
+      '<div class="modal-section">' +
+        '<div class="modal-section-title">Особые приметы</div>' +
+        '<div class="features-list"><div class="feature-item">' + p.features + '</div></div>' +
+      '</div>';
+
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  function openAdd() {
+    document.getElementById('addOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAdd() {
+    document.getElementById('addOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function submitPerson() {
+    var error = document.getElementById('f_error');
+    error.style.display = 'none';
+
+    var fileInput = document.getElementById('f_photo_file');
+    var photoLink = document.getElementById('f_photo').value.trim() || null;
+
+    function doSubmit(photoUrl) {
+      var data = {
+        full_name: document.getElementById('f_name').value.trim(),
+        age: parseInt(document.getElementById('f_age').value),
+        city: document.getElementById('f_city').value.trim(),
+        missing_date: document.getElementById('f_date').value,
+        clothes: document.getElementById('f_clothes').value.trim(),
+        features: document.getElementById('f_features').value.trim(),
+        photo_url: photoUrl,
+        contact_phone: document.getElementById('f_phone').value.trim()
+      };
+
+      if (!data.full_name || !data.age || !data.city || !data.missing_date || !data.clothes || !data.features || !data.contact_phone) {
+        error.textContent = 'Заполните все обязательные поля!';
+        error.style.display = 'block';
+        return;
+      }
+
+      fetch(API + '/persons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(err) {
+            error.textContent = 'Ошибка: ' + (err.detail && err.detail[0] ? err.detail[0].msg : 'проверьте данные');
+            error.style.display = 'block';
+          });
+        }
+        document.getElementById('f_name').value = '';
+        document.getElementById('f_age').value = '';
+        document.getElementById('f_city').value = '';
+        document.getElementById('f_date').value = '';
+        document.getElementById('f_clothes').value = '';
+        document.getElementById('f_features').value = '';
+        document.getElementById('f_photo').value = '';
+        document.getElementById('f_phone').value = '';
+        document.getElementById('f_photo_file').value = '';
+        document.getElementById('f_photo_label').textContent = 'Выбрать фото с компьютера';
+        closeAdd();
+        loadFromAPI();
+      })
+      .catch(function() {
+        error.textContent = 'Не удалось подключиться к серверу';
+        error.style.display = 'block';
+      });
+    }
+
+    if (fileInput.files.length > 0) {
+      var formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      fetch(API + '/upload', { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { doSubmit(d.url); })
+        .catch(function() {
+          error.textContent = 'Ошибка загрузки фото';
+          error.style.display = 'block';
+        });
+    } else {
+      doSubmit(photoLink);
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeModal(); closeAdd(); }
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+    });
+  });
+
+  document.getElementById('searchInput').addEventListener('input', function() {
+    renderCards(this.value);
+  });
+
+  loadFromAPI();
+</script>
+</body>
+</html>
